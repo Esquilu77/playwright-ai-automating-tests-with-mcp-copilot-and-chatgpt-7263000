@@ -1,34 +1,30 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { BoardPage } from '../pages/board.page';
+import { CreateBugModal } from '../pages/create-bug-modal.page';
+import { LoginPage } from '../pages/login.page';
 
-interface User { username: string; password: string }
+test.describe('Create Bug', () => {
+  test('opens the create-bug modal from the board', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const boardPage = new BoardPage(page);
 
-test.describe('Create Bug - Open create-bug modal from board', () => {
-  test('should open the create-bug modal from the board page', async ({ page }) => {
-    const usersPath = join(process.cwd(), 'users.json');
-    const rawUsers = readFileSync(usersPath, 'utf-8');
-    const users = JSON.parse(rawUsers) as User[];
-    const firstUser = users[0];
-
-    await page.goto('/login');
-    await page.getByLabel('Username').fill(firstUser.username);
-    await page.getByLabel('Password').fill(firstUser.password);
-    await page.getByRole('button', { name: 'Login' }).click();
+    await loginPage.goto();
+    await loginPage.loginWithFirstUser();
 
     await page.waitForURL('**/board');
-    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'New Bug' })).toBeVisible();
+    await expect(boardPage.logoutButton).toBeVisible();
+    await expect(boardPage.title).toBeVisible();
+    await expect(boardPage.newBugButton).toBeVisible();
 
-    await page.getByRole('button', { name: 'New Bug' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Create bug' });
+    await boardPage.openCreateBugModal();
 
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByLabel('Title')).toBeVisible();
-    await expect(dialog.getByLabel('Severity')).toBeVisible();
-    await expect(dialog.getByLabel('Owner')).toBeVisible();
-    await expect(dialog.getByLabel('Description')).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Save' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    const createBugModal = new CreateBugModal(page);
+    await expect(createBugModal.dialog).toBeVisible();
+    await expect(createBugModal.titleField).toBeVisible();
+    await expect(createBugModal.severityField).toBeVisible();
+    await expect(createBugModal.ownerField).toBeVisible();
+    await expect(createBugModal.descriptionField).toBeVisible();
+    await expect(createBugModal.saveButton).toBeVisible();
+    await expect(createBugModal.cancelButton).toBeVisible();
   });
 });
